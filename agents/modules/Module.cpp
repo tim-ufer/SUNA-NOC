@@ -857,6 +857,7 @@ void Module::processRemainingNeurons()
 
 void Module::processPrimers()
 {
+/*
 	//execute all Primers
 	for(int i=0; primer_list[i]!=-1; ++i)
 	{
@@ -864,6 +865,8 @@ void Module::processPrimers()
 		int index= neuronIdToDNAIndex(id);
 		//internal_neuron_state[index]+= execute(index);
 		execute(index);
+		//mark as fired
+		is_fired[index]=true;
 	}	
 
 	//set all Primer as already activated and fire them
@@ -875,13 +878,18 @@ void Module::processPrimers()
 		//mark as fired
 		is_fired[index]=true;
 	}	
-	
+*/	
 	//Excite/Inhibit other neurons 
 	for(int i=0; primer_list[i]!=-1; ++i)
 	{
 		int control_id= primer_list[i];
 		int control_index= neuronIdToDNAIndex(control_id);
-		
+
+		//internal_neuron_state[index]+= execute(index);
+		execute(control_index);
+		//mark as fired
+		is_fired[control_index]=true;
+
 		//check the connections from this neuron
 		for(int j=0; c[j].from_neuron_id >= 0;++j)
 		{
