@@ -104,6 +104,9 @@ enum{FITNESS_BASED, NEURON_EFFICIENT, CONNECTION_EFFICIENT, NEURON_RICH, CONNECT
 #define CHANCE_OF_WEIGHT_MUTATION 0.5
 #define WEIGHT_MUTATION_CHANGE_PERCENTAGE 1.0 //10 = 1000% change, 1 = 100% change possible
 
+// Multithreading options
+#define THREADING false
+#define NUMBER_OF_THREADS 8
 
 //  ----------  Environments  ---------- //
 

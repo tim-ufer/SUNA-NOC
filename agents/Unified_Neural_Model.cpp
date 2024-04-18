@@ -158,6 +158,7 @@ void Unified_Neural_Model::endEpisode(double reward)
 	if(testing_individual >= SUBPOPULATION_SIZE)
 	{
 		testing_subpop++;
+		printf("%d     %d\n", testing_subpop, NUMBER_OF_SUBPOPULATIONS);
 		if(testing_subpop >= NUMBER_OF_SUBPOPULATIONS)
 		{
 			testing_subpop=0;

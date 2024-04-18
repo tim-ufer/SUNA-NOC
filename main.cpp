@@ -15,6 +15,7 @@
 #include"parameters.h"
 
 FILE* main_log_file;
+enum ENV_TYPE { mountain_car, function_approximation, single_cart_pole, double_cart_pole, multiplexer };
 
 double computeAverage(double* last_rewards, int counter)
 {
@@ -74,6 +75,34 @@ void setFeatures(Reinforcement_Environment* env)
 
 }
 
+Reinforcement_Environment* setup_env(ENV_TYPE env_type, Random* random, int &number_of_observation_vars, int& number_of_action_vars)
+{
+	Reinforcement_Environment* env;
+	switch (env_type) {
+		case mountain_car:
+			env = new Mountain_Car(random);
+			break;
+		case function_approximation:
+			env = new Function_Approximation(random,1000,false);
+			break;
+		case single_cart_pole:
+			env = new Single_Cart_Pole(random);
+			break;
+		case double_cart_pole:
+			env = new Double_Cart_Pole(random);
+			break;
+		case multiplexer:
+			env = new Multiplexer(3,8,random);
+			break;	
+		default:
+			printf("You done goofed\n");
+			exit(1);
+	}
+	setFeatures(env);
+	env->start(number_of_observation_vars, number_of_action_vars);
+	return env;
+}
+
 int main()
 {
 	//int trials_to_change_maze_states= 10000;
@@ -82,16 +111,8 @@ int main()
 
 	Random* random= new State_of_Art_Random(time(NULL));
 	
-	Reinforcement_Environment* env= new Mountain_Car(random);
-	//Reinforcement_Environment* env= new Function_Approximation(random,1000,false);
-	//Reinforcement_Environment* env= new Single_Cart_Pole(random);
-	//Reinforcement_Environment* env= new Double_Cart_Pole(random);
-	//Reinforcement_Environment* env= new Multiplexer(3,8,random);
-
 	//Reinforcement_Agent* agent= new Dummy(env);
 	Reinforcement_Agent* agent= new Unified_Neural_Model(random);
-	
-	setFeatures(env);
 
 	//Self_Organizing_Neurons* b= (Self_Organizing_Neurons*)agent;
 
@@ -104,18 +125,14 @@ int main()
 	bool print_reward=false;
 	bool print_step=false;
 	bool print_average=false;
-	//bool print_accumulated_reward=true;
 	bool print_agent_information=false;
 
-	int trials=50000;
-	//int trials=200000;		
-	//int trials=200;		
-	//int trials=500;		
+	int trials=200000;
 	
 	int number_of_observation_vars;
 	int number_of_action_vars;
 	
-	env->start(number_of_observation_vars, number_of_action_vars);
+	Reinforcement_Environment* env = setup_env(ENV_TYPE::double_cart_pole, random, number_of_observation_vars, number_of_action_vars);
 	agent->init(number_of_observation_vars, number_of_action_vars);
 	
 	//starting reward 
@@ -128,8 +145,17 @@ int main()
 	int counter=0;
 	double avg_rewards;
 
-	for(i=env->trial;i<trials;i++)
+	int trials_per_thread = trials;
+	if(THREADING)
 	{
+		trials_per_thread = trials / NUMBER_OF_THREADS;
+		printf("%d\n",trials_per_thread);
+ 	}
+	for(i=env->trial;i<trials_per_thread;i++)
+	{	
+		// create threads
+		// for thread in threads
+		// for nm_section in nov map
 		double accum_reward=reward;
 		//do one trial (multiple steps until the environment finish the trial or the trial reaches its MAX_STEPS)
 		while(env->trial==i && step_counter <= env->MAX_STEPS)
@@ -161,6 +187,11 @@ int main()
 			step_counter++;
 
 		}
+		
+		// after all cells in 1 nm_section are done, do the selection step
+		// after nm_sections are done:
+		// sync up threads in preparation for evolution (reproduction step)
+		// do shared evo
 
 #ifdef TERMINATE_IF_MAX_STEPS_REACHED
 		//end evolution when the MAX_STEPS is reached
