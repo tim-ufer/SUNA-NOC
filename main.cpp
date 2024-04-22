@@ -13,7 +13,7 @@
 #include"environments/Multiplexer.h"
 
 #include"parameters.h"
-
+#include <iostream>
 FILE* main_log_file;
 enum ENV_TYPE { mountain_car, function_approximation, single_cart_pole, double_cart_pole, multiplexer };
 
@@ -112,7 +112,7 @@ int main()
 	Random* random= new State_of_Art_Random(time(NULL));
 	
 	//Reinforcement_Agent* agent= new Dummy(env);
-	Reinforcement_Agent* agent= new Unified_Neural_Model(random);
+	Unified_Neural_Model* agent= new Unified_Neural_Model(random);
 
 	//Self_Organizing_Neurons* b= (Self_Organizing_Neurons*)agent;
 
@@ -151,11 +151,15 @@ int main()
 		trials_per_thread = trials / NUMBER_OF_THREADS;
 		printf("%d\n",trials_per_thread);
  	}
+	int nm_sections_per_thread = NOVELTY_MAP_SIZE / NUMBER_OF_THREADS;
+	nmap_cell* cell= (nmap_cell*)(agent->nmap->map[123]).pointer;
+	std::cout << cell << std::endl;
 	for(i=env->trial;i<trials_per_thread;i++)
 	{	
 		// create threads
 		// for thread in threads
 		// for nm_section in nov map
+		//for(nm_section=0;nm_section<NOVELTY_MAP_SIZE;
 		double accum_reward=reward;
 		//do one trial (multiple steps until the environment finish the trial or the trial reaches its MAX_STEPS)
 		while(env->trial==i && step_counter <= env->MAX_STEPS)
