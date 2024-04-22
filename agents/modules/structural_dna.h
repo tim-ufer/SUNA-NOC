@@ -4,7 +4,7 @@
 
 #include"stdio.h"
 #include"random/State_of_Art_Random.h"
-
+ 
 //all neurons not activated by a control neuron are inactive by default
 #define DEFAULT_INACTIVE
 
