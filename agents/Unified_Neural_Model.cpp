@@ -1,6 +1,7 @@
 
 #include"Unified_Neural_Model.h"
 
+
 Unified_Neural_Model::Unified_Neural_Model(Random* random)
 {
 	this->random= random;
@@ -9,8 +10,13 @@ Unified_Neural_Model::Unified_Neural_Model(Random* random)
 	
 	testing_subpop= 0;
 	testing_individual= 0;	
+	testing_individual_done=0;
+	testing_subpop_done=0;
 	generation=1;
 	best_index=0;
+	wait_for_sync = false;
+	curr_generation_trial = 0;
+	end_training = false;
 
 #ifdef	SPECTRUM_DIVERSITY
 	nmap= new Novelty_Map(NOVELTY_MAP_SIZE , SPECTRUM_SIZE);
@@ -36,6 +42,12 @@ Unified_Neural_Model::Unified_Neural_Model(Random* random)
 Unified_Neural_Model::~Unified_Neural_Model()
 {
 	free(action);
+
+	for (int i = 0; i < NUMBER_OF_THREADS; i++)
+	{
+		free(SUNA_action[i]);
+	}
+	
 	
 	for(int i= 0; i < NUMBER_OF_SUBPOPULATIONS; ++i )
 	{
@@ -81,7 +93,14 @@ void Unified_Neural_Model::init(int number_of_observation_vars, int number_of_ac
 	this->number_of_observation_vars= number_of_observation_vars;
 	this->number_of_action_vars= number_of_action_vars;
 
-	action= (double*) calloc(number_of_action_vars, sizeof(double));
+	for (int i = 0; i < NUMBER_OF_THREADS; i++)
+	{
+		SUNA_action[i] = (double*) calloc(number_of_action_vars, sizeof(double));
+		accumulated_rewards_per_thread[i] = 0;
+		rewards_initialized[i] = false;
+	}
+	
+	//action= (double*) calloc(number_of_action_vars, sizeof(double));
 
 	//random subpopulation	
 	subpopulation= new Module**[NUMBER_OF_SUBPOPULATIONS];		
@@ -125,7 +144,77 @@ void Unified_Neural_Model::step(double* observation, double reward)
 	//update reward
 	tmp_fitness[testing_subpop][testing_individual]+= reward;
 }
-		
+
+void Unified_Neural_Model::step(int subpop, int individual, double* observation, double reward, int thread_id)
+{
+	//execute individual
+	subpopulation[subpop][individual]->process(observation, SUNA_action[thread_id]);		
+
+	//update reward
+	tmp_fitness[subpop][individual]+= reward;
+}
+
+// This function acts like a queue, were a thread can get the next individual to run a trial.
+// Pupose: This will limit the time a thread does nothing/is waiting.
+std::array<int, 2> Unified_Neural_Model::getNextIndividual(){
+	// Array of the individual which will be tested to the thread
+	std::array<int, 2> individual_path = {testing_subpop,testing_individual};
+
+	// If all generations have finished their training return NULL to end training.
+	if (end_training){
+		individual_path[0] = -2;
+		return individual_path;
+	}
+
+	// We need to wait for sync so that all individuals have done their trial so Evolution can be done.
+	if (wait_for_sync){
+		individual_path[0] = -1;
+		return individual_path;
+	}
+
+	//test a new individual from this subpopulation
+	testing_individual++;
+
+	//change subpopulation if all individuals from this subpop were already tested
+	//evolve if all subpopulations and all individuals were tested (evaluated)
+	if(testing_individual >= SUBPOPULATION_SIZE)
+	{
+		testing_subpop++;
+		if(testing_subpop >= NUMBER_OF_SUBPOPULATIONS)
+		{
+			//printf("last testing_subpop: %d and last testing_individual:%d\n", testing_subpop, testing_individual);
+			testing_subpop=0;
+			wait_for_sync=true;
+
+// 			//Evolve
+// #ifdef	SPECTRUM_DIVERSITY
+// 			spectrumDiversityEvolve();
+// #else
+// 			evolve();
+// #endif
+// 			//supremacistEvolve();
+		}
+
+
+		testing_individual=0;
+	}
+
+	//printf("curr testing_subpop: %d and curr testing_individual:%d\n", testing_subpop, testing_individual);
+	return individual_path;
+}
+
+void Unified_Neural_Model::updateReward(double reward, int thread_id){
+	if (!rewards_initialized[thread_id]){
+		accumulated_rewards_per_thread[thread_id] = reward;
+		rewards_initialized[thread_id] = true;
+		//printf("thread %d first time rewards, is:  %f \n", thread_id, reward);
+
+	}
+	else if (accumulated_rewards_per_thread[thread_id] < reward){
+		accumulated_rewards_per_thread[thread_id] = reward;
+	}
+}
+
 void Unified_Neural_Model::endEpisode(double reward)
 {
 	//update reward
@@ -176,6 +265,81 @@ void Unified_Neural_Model::endEpisode(double reward)
 
 }
 
+void Unified_Neural_Model::endEpisode(int species, int individual, double reward)
+{
+	//printf("%d %d\n", species, individual);
+
+	//update reward
+	tmp_fitness[species][individual]+= reward;
+
+	// step_counter++;
+	
+	// //printf("%f\n",tmp_fitness[testing_subpop][testing_individual]);
+
+	// //average 
+	// if(step_counter >= EPISODES_PER_INDIVIDUAL)
+	// {
+	// 	tmp_fitness[species][individual]/= (double) step_counter;
+	// 	step_counter=0;
+	// }
+	// else
+	// {
+	// 	return;
+	// }
+	
+	subpopulation[species][individual]->clearMemory();		
+	
+	//test a new individual from this subpopulation
+	testing_individual_done++;
+
+	//change subpopulation if all individuals from this subpop were already tested
+	//evolve if all subpopulations and all individuals were tested (evaluated)
+	if(testing_individual_done >= SUBPOPULATION_SIZE)
+	{
+		bool waitforsync = true;
+		testing_subpop_done++;
+		if(testing_subpop_done >= NUMBER_OF_SUBPOPULATIONS)
+		{
+			testing_subpop_done=0;
+			//printf("current generation: %d\n", curr_generation_trial);
+			curr_generation_trial++;
+
+			// Print average reward for this generation
+			double best_reward = accumulated_rewards_per_thread[0];
+			for (int i = 1; i < NUMBER_OF_THREADS; i++)
+			{
+				if (best_reward < accumulated_rewards_per_thread[i]){
+					best_reward = accumulated_rewards_per_thread[i];
+				}
+			}
+			printf("Best reward of generation %d, is:  %f \n", curr_generation_trial-1, best_reward);
+
+			for (int i = 0; i < NUMBER_OF_THREADS; i++)
+			{
+				accumulated_rewards_per_thread[i] = 0;
+				rewards_initialized[i] = false;
+			}
+
+			if (curr_generation_trial >= MAX_GENERATIONS_TRIALS){
+				end_training = true;
+			} else {
+
+				//Evolve
+#ifdef	SPECTRUM_DIVERSITY
+				spectrumDiversityEvolve();
+#else
+				evolve();
+#endif
+				//supremacistEvolve();
+				waitforsync = false;
+			}
+		}
+		testing_individual_done=0;
+		wait_for_sync = waitforsync;
+	}
+
+}
+
 void Unified_Neural_Model::print()
 {
 	subpopulation[MAIN_SUBPOP][best_index]->printGraph("best_individual.dot");		
@@ -183,7 +347,6 @@ void Unified_Neural_Model::print()
 
 double Unified_Neural_Model::stepBestAction(double* observation)
 {
-
 	//execute individual
 	subpopulation[MAIN_SUBPOP][best_index]->process(observation, action);		
 
@@ -273,6 +436,8 @@ void Unified_Neural_Model::spectrumDiversityEvolve()
 				cell->module=NULL;
 			}	
 			
+			// TODO
+			// MAKE A FUNCTION WHICH RETURNS A BOOL BECAUSE THIS IS A LITTLE LOL
 			//check if nothing was inserted
 			if(cell->module==NULL)
 			{

@@ -105,8 +105,8 @@ enum{FITNESS_BASED, NEURON_EFFICIENT, CONNECTION_EFFICIENT, NEURON_RICH, CONNECT
 #define WEIGHT_MUTATION_CHANGE_PERCENTAGE 1.0 //10 = 1000% change, 1 = 100% change possible
 
 // Multithreading options
-#define THREADING false
-#define NUMBER_OF_THREADS 8
+#define NUMBER_OF_THREADS 10 // Set to 1 to not utelize multi threading
+#define MAX_GENERATIONS_TRIALS 300 // The number of times each generation (All individuals in a generation) needs to do a trial.
 
 //  ----------  Environments  ---------- //
 
