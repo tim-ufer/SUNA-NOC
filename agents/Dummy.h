@@ -31,6 +31,8 @@ class Dummy : public Reinforcement_Agent
 		void step(double* observation, double reward);
 		void print();
 		double stepBestAction(double* observation);
+		// Point the compiler to origin of virtual function to avoid [-Woverloaded-virtual=] warning
+		using Reinforcement_Agent::endEpisode;
 		void endEpisode();
 		void saveAgent(const char* filename);
 		void loadAgent(const char* filename);

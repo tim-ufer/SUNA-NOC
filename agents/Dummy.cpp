@@ -33,8 +33,6 @@ void Dummy::init(int number_of_observation_vars, int number_of_action_vars)
 
 void Dummy::step(double* observation, double reward)
 {
-	int i;
-
 	//print environment's information
 	env->print();
 
@@ -44,7 +42,7 @@ void Dummy::step(double* observation, double reward)
 
 	//just ignore reward and observation 
 	//and give a random action! :P
-	for(i=0;i<number_of_action_vars;++i)
+	for(int i=0;i<number_of_action_vars;++i)
 	{
 		printf("Action %d: ",i);
 		scanf("%lf",&(action[i]));

@@ -14,14 +14,6 @@
 #include"self_organized_systems/Novelty_Map.h"
 #include "array"
 
-//#include"unistd.h"
-//#include"sys/wait.h"
-//subpopulations' size
-//#define NEURON_EFFICIENT_SUBPOPULATION_SIZE 10
-//#define CONNECTION_EFFICIENT_SUBPOPULATION_SIZE 10
-//#define FITNESS_SUBPOPULATION_SIZE 10
-//#define NEURON_RICH_SUBPOPULATION_SIZE 10
-//#define CONNECTION_RICH_SUBPOPULATION_SIZE 10
 
 typedef struct _nmap_cell
 {
@@ -69,9 +61,6 @@ class Unified_Neural_Model : public Reinforcement_Agent
 		Novelty_Map* nmap;
 #endif
 		//auxiliary
-		void printBest();
-		void evolve();
-		void supremacistEvolve();
 		void spectrumDiversityEvolve();
 		double subpopulationObjective(Module* module, double fitness, int subpopulation_index);
 		void findBestIndividual();
@@ -81,7 +70,7 @@ class Unified_Neural_Model : public Reinforcement_Agent
 
 		//Implementing the Reinforcement Agent Interface
 		void init(int number_of_observation_vars, int number_of_action_var);
-		void step(double* observation, double reward);
+		void step(double* observation, double reward); // Legacy function from Reinforcement_Agent, don't use!
 		void step(int species, int individual, double* observation, double reward, int thread_id);
 		std::array<int, 2> getNextIndividual();
 		void print();
@@ -93,10 +82,6 @@ class Unified_Neural_Model : public Reinforcement_Agent
 		void updateReward(double reward, int thread_id);
 		bool cell_insert_check(nmap_cell* cell, int species, int individual, double this_fitness);
 		bool find_best_individual(int best_number_of_neurons, int species, int individual, double best_fitness);
-		
-		//debug
-		void printSubpop();
-
 };
 
 #endif
