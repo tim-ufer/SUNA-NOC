@@ -351,7 +351,7 @@ int main()
 	environments.reserve(NUMBER_OF_THREADS);  // Reserve memory for the vector
 
 	for (int i = 0; i < NUMBER_OF_THREADS; ++i) {
-        Reinforcement_Environment* env = setup_env(ENV_TYPE::double_cart_pole, random, number_of_observation_vars, number_of_action_vars);
+        Reinforcement_Environment* env = setup_env(ENV_TYPE::mountain_car, random, number_of_observation_vars, number_of_action_vars);
         environments.push_back(env);  // Store the pointer to the newly created environment in the vector
     }
 
@@ -370,12 +370,12 @@ int main()
 	int counter=0;
 	double avg_rewards;
 
-	int trials_per_thread = trials;
-	if(NUMBER_OF_THREADS > 1)
-	{
-		trials_per_thread = trials / NUMBER_OF_THREADS;
-		printf("%d\n",trials_per_thread);
- 	}
+	// int trials_per_thread = trials;
+	// if(NUMBER_OF_THREADS > 1)
+	// {
+	// 	trials_per_thread = trials / NUMBER_OF_THREADS;
+	// 	printf("%d\n",trials_per_thread);
+ 	// }
 
 	//nmap_cell* cell= (nmap_cell*)(agent->nmap->map[-]).pointer;
 	//std::cout << cell << std::endl;-

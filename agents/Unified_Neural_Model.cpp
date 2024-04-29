@@ -360,6 +360,24 @@ void Unified_Neural_Model::endBestEpisode()
 }
 
 
+bool Unified_Neural_Model::cell_insert_check(nmap_cell* cell, int species, int individual, double this_fitness){
+	if (cell->module==NULL ||
+	 	cell->fitness < this_fitness || 
+		(cell->fitness == this_fitness && 
+			(cell->module)->number_of_neurons >= subpopulation[species][individual]->number_of_neurons)){
+				return true;
+			}
+	return false;
+}
+
+bool Unified_Neural_Model::find_best_individual(int best_number_of_neurons, int species, int individual, double best_fitness){
+	if (tmp_fitness[species][individual] > best_fitness ||
+		(tmp_fitness[species][individual] == best_fitness && 
+			best_number_of_neurons >= subpopulation[species][individual]->number_of_neurons)){
+				return true;
+			}
+	return false;
+}
 
 void Unified_Neural_Model::spectrumDiversityEvolve()
 {
@@ -378,26 +396,31 @@ void Unified_Neural_Model::spectrumDiversityEvolve()
 		{
 			fitness[i][j]= tmp_fitness[i][j];
 
-			if(tmp_fitness[i][j] > best_fitness )
-			{
+			if(find_best_individual(best_number_of_neurons, i, j, best_fitness)){
 				best_fitness= tmp_fitness[i][j];
 				best_index=j;
-				best_number_of_neurons= subpopulation[i][j]->number_of_neurons;		
+				best_number_of_neurons= subpopulation[i][j]->number_of_neurons;	
 			}
-			else
-			{
-				//if they have the same fitness only updtate if the new individual have the same or less number of neurons
-				if(tmp_fitness[i][j] == best_fitness )
-				{
-					if(best_number_of_neurons >= subpopulation[i][j]->number_of_neurons)
-					{
-						best_fitness= tmp_fitness[i][j];
-						best_index=j;
-						best_number_of_neurons= subpopulation[i][j]->number_of_neurons;		
+			// if(tmp_fitness[i][j] > best_fitness )
+			// {
+			// 	best_fitness= tmp_fitness[i][j];
+			// 	best_index=j;
+			// 	best_number_of_neurons= subpopulation[i][j]->number_of_neurons;		
+			// }
+			// else
+			// {
+			// 	//if they have the same fitness only updtate if the new individual have the same or less number of neurons
+			// 	if(tmp_fitness[i][j] == best_fitness )
+			// 	{
+			// 		if(best_number_of_neurons >= subpopulation[i][j]->number_of_neurons)
+			// 		{
+			// 			best_fitness= tmp_fitness[i][j];
+			// 			best_index=j;
+			// 			best_number_of_neurons= subpopulation[i][j]->number_of_neurons;		
 
-					}
-				}
-			}
+			// 		}
+			// 	}
+			// }
 		
 			
 			//reset the fitness
@@ -439,31 +462,35 @@ void Unified_Neural_Model::spectrumDiversityEvolve()
 			// TODO
 			// MAKE A FUNCTION WHICH RETURNS A BOOL BECAUSE THIS IS A LITTLE LOL
 			//check if nothing was inserted
-			if(cell->module==NULL)
-			{
+			if (cell_insert_check(cell, i, j, this_fitness)){
 				cell->module= subpopulation[i][j];		
 				cell->fitness= this_fitness;
-			}	
-			else
-			{
-				if(cell->fitness < this_fitness)
-				{
-					cell->module= subpopulation[i][j];		
-					cell->fitness= this_fitness;			
-				}
-				else
-				{
-					//if they have the same fitness only updtate if the new individual have the same or less number of neurons
-					if(cell->fitness == this_fitness )
-					{
-						if((cell->module)->number_of_neurons >= subpopulation[i][j]->number_of_neurons)
-						{
-							cell->module= subpopulation[i][j];		
-							cell->fitness= this_fitness;			
-						}
-					}
-				}
 			}
+			// if(cell->module==NULL)
+			// {
+			// 	cell->module= subpopulation[i][j];		
+			// 	cell->fitness= this_fitness;
+			// }	
+			// else
+			// {
+			// 	if(cell->fitness < this_fitness)
+			// 	{
+			// 		cell->module= subpopulation[i][j];		
+			// 		cell->fitness= this_fitness;			
+			// 	}
+			// 	else
+			// 	{
+			// 		//if they have the same fitness only updtate if the new individual have the same or less number of neurons
+			// 		if(cell->fitness == this_fitness )
+			// 		{
+			// 			if((cell->module)->number_of_neurons >= subpopulation[i][j]->number_of_neurons)
+			// 			{
+			// 				cell->module= subpopulation[i][j];		
+			// 				cell->fitness= this_fitness;			
+			// 			}
+			// 		}
+			// 	}
+			// }
 		
 		}
 	}

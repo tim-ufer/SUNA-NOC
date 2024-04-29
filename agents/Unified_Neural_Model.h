@@ -91,6 +91,8 @@ class Unified_Neural_Model : public Reinforcement_Agent
 		void saveAgent(const char* filename);
 		void loadAgent(const char* filename);
 		void updateReward(double reward, int thread_id);
+		bool cell_insert_check(nmap_cell* cell, int species, int individual, double this_fitness);
+		bool find_best_individual(int best_number_of_neurons, int species, int individual, double best_fitness);
 		
 		//debug
 		void printSubpop();
