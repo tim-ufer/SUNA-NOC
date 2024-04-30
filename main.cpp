@@ -87,6 +87,10 @@ Reinforcement_Environment* setup_env(ENV_TYPE env_type, Random* random, int &num
 	return env;
 }
 
+/*
+- This functions is necessary for SUNA
+- It is used by individual threads to get and process trials.
+*/
 void ProcessTrials(Unified_Neural_Model* agent, Reinforcement_Environment* env, int thread_id) {
 	int subpop;
 	int individual;
@@ -97,10 +101,9 @@ void ProcessTrials(Unified_Neural_Model* agent, Reinforcement_Environment* env, 
 
 	bool do_testing = true;
 
-	// We need to loop this threads live to ask for new individuals to trial.
 	// Each loop means: 
-		// 1) Getting and testing a new individual.
-		// 2) Waiting for sync (evolution in SUNA)
+		// 1) Asking for-, maybe Getting- and testing a new individual.
+		// 2) Waiting for sync (evolution in SUNA) if needed.
 	int i = env->trial;
 	while (do_testing){
 		// Lock the mutex using std::lock_guard
@@ -120,17 +123,13 @@ void ProcessTrials(Unified_Neural_Model* agent, Reinforcement_Environment* env, 
 		} 
 
 		double accum_reward=reward;
-		// do one trial (multiple steps until the environment finish the trial or the trial reaches its MAX_STEPS)
 
+		// do one trial (multiple steps until the environment finish the trial or the trial reaches its MAX_STEPS)
 		while(env->trial==i && step_counter <= env->MAX_STEPS)
 		{
-
 			agent->step(subpop, individual, env->observation, reward, thread_id);
-
 			reward = env->step(agent->SUNA_action[thread_id]);		
-			
 			accum_reward += reward;
-
 			step_counter++;
 		}
 
@@ -167,55 +166,57 @@ void ProcessTrials(Unified_Neural_Model* agent, Reinforcement_Environment* env, 
 	}
 }
 
-int main()
-{
-	#pragma region
-	main_log_file= fopen("log.txt","w");
-
+/*
+- This functions is necessary for SUNA
+- It functions as a blueprint to understand how the multithreading works with the environments/agent.
+- There is one Agent.
+- The number of environments is determeined by the number of threads.
+*/
+Unified_Neural_Model* run_SUNA(){
 	Random* random= new State_of_Art_Random(time(NULL));
-	
-	//Reinforcement_Agent* agent= new Dummy(env);
 	Unified_Neural_Model* agent= new Unified_Neural_Model(random);
-	//Self_Organizing_Neurons* b= (Self_Organizing_Neurons*)agent;
-	
+
 	// These two variables gets initial values from being passed as references to setup_env()
 	int number_of_observation_vars;
 	int number_of_action_vars;
 	
 	// Create the right number of environments. Each thread needs its own env.
 	std::vector<Reinforcement_Environment*> environments;
-	
 	environments.reserve(NUMBER_OF_THREADS);  // Reserve memory for the vector
-
 	for (int i = 0; i < NUMBER_OF_THREADS; ++i) {
         Reinforcement_Environment* env = setup_env(ENV_TYPE::mountain_car, random, number_of_observation_vars, number_of_action_vars);
         environments.push_back(env);  // Store the pointer to the newly created environment in the vector
-    }
-
-	////TODO: WRITING THE DEALLOCATION HERE SO I DO NOT FORGET!!
-    
+    }    
 
 	agent->init(number_of_observation_vars, number_of_action_vars);
-	
-	#pragma endregion
 
+	// A variable to store the threads.
 	std::vector<std::thread> threads(NUMBER_OF_THREADS);
-	// We must loop each trial for each thread and their individuals
 
+	// Creating threads and each thread calls the "ProcessTrials" function.
 	for (int t = 0; t < NUMBER_OF_THREADS; ++t) {
 		threads[t] = std::thread(ProcessTrials, agent, environments[t], t);
 	}
+
 	// Wait for all threads to complete
 	for (auto& th : threads) {
 		th.join();
 	}
 
-	//agent->saveAgent("dna_best_individual");
-	
+	// Just deleating the allocated enviroments.
 	for (auto env : environments) {
-		delete env;  // Assuming dynamic allocation in setup_env()
+		delete env;
 	}
 	environments.clear();
+	return agent;
+}
 
+int main()
+{
+	main_log_file= fopen("log.txt","w");
+	
+	// The agent is returned for the user/researcher to be able to access the trained network or create graphs ecetra.
+	Unified_Neural_Model* agent = run_SUNA();
+	
 	return 0;
 }
