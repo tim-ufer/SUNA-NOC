@@ -488,6 +488,7 @@ void Unified_Neural_Model::calculateSpectrum(double* spectrum, int subpopulation
 	}
 	
 	//execute all Control Neurons that are excited and not activated
+	int counter=0;
 	for(int i=0; mod->n[i].id >= 0;++i)
 	{
 		switch(mod->n[i].type)
@@ -527,6 +528,7 @@ void Unified_Neural_Model::calculateSpectrum(double* spectrum, int subpopulation
 		{
 			spectrum[5]++;
 		}
+		counter++;
 	}
 
 #ifdef NORMALIZED_SPECTRUM_DIVERSITY

@@ -162,9 +162,6 @@ void ProcessTrials(Unified_Neural_Model* agent, Reinforcement_Environment* env, 
 			reward= env->step(NULL);
 		}
 
-
-		agent->saveAgent("dna_best_individual");
-		
 		step_counter = 1;
 		i++;
 	}
@@ -196,10 +193,7 @@ int main()
     }
 
 	////TODO: WRITING THE DEALLOCATION HERE SO I DO NOT FORGET!!
-    // for (auto env : environments) {
-    //     delete env;  // Assuming dynamic allocation in setup_env()
-    // }
-    // environments.clear();
+    
 
 	agent->init(number_of_observation_vars, number_of_action_vars);
 	
@@ -215,6 +209,13 @@ int main()
 	for (auto& th : threads) {
 		th.join();
 	}
+
+	//agent->saveAgent("dna_best_individual");
+	
+	for (auto env : environments) {
+		delete env;  // Assuming dynamic allocation in setup_env()
+	}
+	environments.clear();
 
 	return 0;
 }
