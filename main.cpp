@@ -92,7 +92,6 @@ Reinforcement_Environment* setup_env(ENV_TYPE env_type, Random* random, int &num
 - It is used by individual threads to get and process trials.
 */
 void ProcessTrials(Unified_Neural_Model* agent, Reinforcement_Environment* env, int thread_id) {
-	int subpop;
 	int individual;
 
 	//starting reward 
@@ -109,16 +108,14 @@ void ProcessTrials(Unified_Neural_Model* agent, Reinforcement_Environment* env, 
 		// Lock the mutex using std::lock_guard
 		{
 			std::lock_guard<std::mutex> lock(mtx);
-			std::array<int, 2> individual_path = agent->getNextIndividual(); // Returns {testing_subpop, testing_individual}
-			subpop = individual_path[0];
-			individual = individual_path[1];
+			individual = agent->getNextIndividual();
 		}
 
-		if (subpop == -2){ // End training
+		if (individual == -2){ // End training
 			do_testing = false;
 			std::cout << "END TRAINING Thread " << thread_id << std::endl;
 			break;
-		}else if (subpop == -1){ // Wait for sync
+		}else if (individual == -1){ // Wait for sync
 			continue;
 		} 
 
@@ -127,7 +124,7 @@ void ProcessTrials(Unified_Neural_Model* agent, Reinforcement_Environment* env, 
 		// do one trial (multiple steps until the environment finish the trial or the trial reaches its MAX_STEPS)
 		while(env->trial==i && step_counter <= env->MAX_STEPS)
 		{
-			agent->step(subpop, individual, env->observation, reward, thread_id);
+			agent->step(individual, env->observation, reward, thread_id);
 			reward = env->step(agent->SUNA_action[thread_id]);		
 			accum_reward += reward;
 			step_counter++;
@@ -147,7 +144,7 @@ void ProcessTrials(Unified_Neural_Model* agent, Reinforcement_Environment* env, 
 		// Create a new function to end episode for this specific thread and trial
 		{
 			std::lock_guard<std::mutex> lock(mtx);
-			agent->endEpisode(subpop, individual, reward);
+			agent->endEpisode(individual, reward);
 		}
 			
 		//if env->trial is the same as i, it means that the internal state of the environment has not changed

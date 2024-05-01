@@ -36,16 +36,16 @@ class Unified_Neural_Model : public Reinforcement_Agent
 		
 		Random* random;
 
-		Module*** subpopulation;
-		Module*** tmp_subpopulation;
-		double** fitness;
-		double** tmp_fitness;
+		Module** subpopulation;
+		Module** tmp_subpopulation;
+		double* fitness;
+		double* tmp_fitness;
 		int testing_individual; // The current pop/nmapcell to give to the thread who asks.
 		int testing_subpop; // The current individual to give to the thread who asks.
 		int testing_individual_done; // to know what pop/nmapcell that is tested.
 		int testing_subpop_done; // to know what individual that is tested.
 		int best_index;
-		int selected_individuals[NUMBER_OF_SUBPOPULATIONS][SUBPOPULATION_SIZE][2];	
+		int selected_individuals[SUBPOPULATION_SIZE][2];	
 		int generation;
 		double step_counter;
 		bool wait_for_sync;
@@ -62,26 +62,26 @@ class Unified_Neural_Model : public Reinforcement_Agent
 #endif
 		//auxiliary
 		void spectrumDiversityEvolve();
-		double subpopulationObjective(Module* module, double fitness, int subpopulation_index);
+		double subpopulationObjective(Module* module, double fitness);
 		void findBestIndividual();
-		void tryToInsertInSubpopulation(int subpopulation_index, int individual_index, int inserting_subpop);
-		void calculateSpectrum(double* spectrum, int subpopulation_index, int individual_index);
+		void tryToInsertInSubpopulation( int individual_index, int inserting_subpop);
+		void calculateSpectrum(double* spectrum, int individual_index);
 		void endBestEpisode();
 
 		//Implementing the Reinforcement Agent Interface
 		void init(int number_of_observation_vars, int number_of_action_var);
 		void step(double* observation, double reward); // Legacy function from Reinforcement_Agent, don't use!
-		void step(int species, int individual, double* observation, double reward, int thread_id);
-		std::array<int, 2> getNextIndividual();
+		void step(int individual, double* observation, double reward, int thread_id);
+		int getNextIndividual();
 		void print();
 		double stepBestAction(double* observation);
 		void endEpisode(double reward);
-		void endEpisode(int species, int individual, double reward);
+		void endEpisode(int individual, double reward);
 		void saveAgent(const char* filename);
 		void loadAgent(const char* filename);
 		void updateReward(double reward, int thread_id);
-		bool cell_insert_check(nmap_cell* cell, int species, int individual, double this_fitness);
-		bool find_best_individual(int best_number_of_neurons, int species, int individual, double best_fitness);
+		bool cell_insert_check(nmap_cell* cell,int individual, double this_fitness);
+		bool find_best_individual(int best_number_of_neurons, int individual, double best_fitness);
 };
 
 #endif
